@@ -29,6 +29,8 @@ import com.codahale.metrics.jvm.ThreadStatesGaugeSet;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
+import io.dropwizard.jersey.validation.Hibernate;
+import io.dropwizard.jersey.validation.ParamValidatorUnwrapper;
 import io.dropwizard.validation.valuehandling.OptionalValidatedValueUnwrapper;
 import org.hibernate.validator.HibernateValidator;
 
@@ -67,12 +69,7 @@ public class Bootstrap<T extends Configuration> {
         this.bundles = Lists.newArrayList();
         this.configuredBundles = Lists.newArrayList();
         this.commands = Lists.newArrayList();
-        this.validatorFactory = Validation
-                .byProvider(HibernateValidator.class)
-                .configure()
-                .addValidatedValueHandler(new OptionalValidatedValueUnwrapper())
-                .buildValidatorFactory();
-
+        this.validatorFactory = Hibernate.newValidatorFactory();
         this.metricRegistry = new MetricRegistry();
         this.configurationSourceProvider = new FileConfigurationSourceProvider();
         this.classLoader = Thread.currentThread().getContextClassLoader();

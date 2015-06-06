@@ -9,6 +9,7 @@ import com.google.common.collect.Sets;
 import io.dropwizard.jackson.Jackson;
 import io.dropwizard.jersey.DropwizardResourceConfig;
 import io.dropwizard.jersey.jackson.JacksonMessageBodyProvider;
+import io.dropwizard.jersey.validation.ConstraintViolationExceptionMapper;
 import io.dropwizard.jersey.validation.Hibernate;
 import io.dropwizard.logging.BootstrapLogging;
 import org.glassfish.jersey.client.ClientConfig;
@@ -17,13 +18,12 @@ import org.glassfish.jersey.test.DeploymentContext;
 import org.glassfish.jersey.test.JerseyTest;
 import org.glassfish.jersey.test.ServletDeploymentContext;
 import org.glassfish.jersey.test.inmemory.InMemoryTestContainerFactory;
-import org.glassfish.jersey.test.spi.TestContainerException;
 import org.glassfish.jersey.test.spi.TestContainerFactory;
 import org.junit.rules.TestRule;
 import org.junit.runner.Description;
 import org.junit.runners.model.Statement;
+
 import javax.servlet.ServletConfig;
-import javax.validation.Validation;
 import javax.validation.Validator;
 import javax.ws.rs.client.Client;
 import javax.ws.rs.core.Context;
@@ -152,6 +152,7 @@ public class ResourceTestRule implements TestRule {
         }
 
         private void configure(final ResourceTestRule resourceTestRule) {
+            register(new ConstraintViolationExceptionMapper());
             for (Class<?> provider : resourceTestRule.providers) {
                 register(provider);
             }

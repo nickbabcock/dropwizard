@@ -14,7 +14,7 @@ import java.lang.reflect.Type;
  * parameter was not detected in the response, instead of the resulting value being null, it will
  * evaluate to {@link Optional#absent()}
  */
-final public class NonEmptyStringParamFeature implements Feature {
+public class NonEmptyStringParamFeature implements Feature {
     @Override
     public boolean configure(final FeatureContext context) {
         context.register(new ParamConverterProvider() {

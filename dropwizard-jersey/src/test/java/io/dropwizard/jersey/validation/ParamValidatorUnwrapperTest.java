@@ -25,7 +25,7 @@ public class ParamValidatorUnwrapperTest {
         public NonEmptyStringParam name = new NonEmptyStringParam("a");
     }
 
-    private final Validator validator = Hibernate.newValidator();
+    private final Validator validator = Validators.newValidator();
 
     @Test
     public void succeedsWithAllGoodData() {

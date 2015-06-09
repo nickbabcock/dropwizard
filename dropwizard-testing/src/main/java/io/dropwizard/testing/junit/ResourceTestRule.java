@@ -10,7 +10,7 @@ import io.dropwizard.jackson.Jackson;
 import io.dropwizard.jersey.DropwizardResourceConfig;
 import io.dropwizard.jersey.jackson.JacksonMessageBodyProvider;
 import io.dropwizard.jersey.validation.ConstraintViolationExceptionMapper;
-import io.dropwizard.jersey.validation.Hibernate;
+import io.dropwizard.jersey.validation.Validators;
 import io.dropwizard.logging.BootstrapLogging;
 import org.glassfish.jersey.client.ClientConfig;
 import org.glassfish.jersey.servlet.ServletProperties;
@@ -45,7 +45,7 @@ public class ResourceTestRule implements TestRule {
         private final Set<Class<?>> providers = Sets.newHashSet();
         private final Map<String, Object> properties = Maps.newHashMap();
         private ObjectMapper mapper = Jackson.newObjectMapper();
-        private Validator validator = Hibernate.newValidator();
+        private Validator validator = Validators.newValidator();
         private TestContainerFactory testContainerFactory = new InMemoryTestContainerFactory();
 
         public Builder setMapper(ObjectMapper mapper) {

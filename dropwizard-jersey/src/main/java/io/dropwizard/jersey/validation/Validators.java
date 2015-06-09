@@ -12,8 +12,8 @@ import javax.validation.ValidatorFactory;
 /**
  * A utility class for Hibernate.
  */
-public class Hibernate {
-    private Hibernate() { /* singleton */ }
+public class Validators {
+    private Validators() { /* singleton */ }
 
     /**
      * Creates a new {@link Validator} based on {@link #newValidatorFactory()}

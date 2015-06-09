@@ -17,6 +17,7 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.MultivaluedMap;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Type;
 import java.util.*;
@@ -66,6 +67,18 @@ public class JacksonMessageBodyProvider extends JacksonJaxbJsonProvider {
                                                     mediaType,
                                                     httpHeaders,
                                                     entityStream));
+    }
+
+    @Override
+    public void writeTo(Object value,
+                        Class<?> type,
+                        Type genericType,
+                        Annotation[] annotations,
+                        MediaType mediaType,
+                        MultivaluedMap<String, Object> httpHeaders,
+                        OutputStream entityStream) throws IOException {
+        super.writeTo(validate(annotations, value),
+                type, genericType, annotations, mediaType, httpHeaders, entityStream);
     }
 
     private Object validate(Annotation[] annotations, Object value) {

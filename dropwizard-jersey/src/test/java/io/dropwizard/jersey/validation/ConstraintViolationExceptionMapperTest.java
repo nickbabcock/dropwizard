@@ -41,6 +41,28 @@ public class ConstraintViolationExceptionMapperTest extends JerseyTest {
     }
 
     @Test
+    public void returnInvalidEntityIs500() throws Exception {
+        assumeThat(Locale.getDefault().getLanguage(), is("en"));
+
+        final Response response = target("/valid/foo").request(MediaType.APPLICATION_JSON)
+                .post(Entity.entity("{ \"name\": \"Coda\" }", MediaType.APPLICATION_JSON));
+        assertThat(response.getStatus()).isEqualTo(500);
+        assertThat(response.readEntity(String.class))
+                .isEqualTo("{\"errors\":[\"server response name may not be empty\"]}");
+    }
+
+    @Test
+    public void returnInvalidatedEntityIs500() throws Exception {
+        assumeThat(Locale.getDefault().getLanguage(), is("en"));
+
+        final Response response = target("/valid/fooValidated").request(MediaType.APPLICATION_JSON)
+                .post(Entity.entity("{ \"name\": \"Coda\" }", MediaType.APPLICATION_JSON));
+        assertThat(response.getStatus()).isEqualTo(500);
+        assertThat(response.readEntity(String.class))
+                .isEqualTo("{\"errors\":[\"server response name may not be empty\"]}");
+    }
+
+    @Test
     public void getInvalidReturnIs500() throws Exception {
         // return value is too long and so will fail validation
         final Response response = target("/valid/bar")

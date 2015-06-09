@@ -21,8 +21,16 @@ import javax.ws.rs.core.MediaType;
 public class ValidatingResource {
     @POST
     @Path("foo")
-    public String blah(@Validated ValidRepresentation representation) {
-        return representation.getName();
+    @Valid
+    public ValidRepresentation blah(@Validated ValidRepresentation representation) {
+        return new ValidRepresentation();
+    }
+
+    @POST
+    @Path("fooValidated")
+    @Validated
+    public ValidRepresentation blahValidated(@Validated ValidRepresentation representation) {
+        return new ValidRepresentation();
     }
 
     @GET

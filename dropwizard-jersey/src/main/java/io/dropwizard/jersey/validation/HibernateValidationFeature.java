@@ -1,7 +1,6 @@
 package io.dropwizard.jersey.validation;
 
 import org.glassfish.hk2.api.Factory;
-import org.glassfish.hk2.api.PerLookup;
 import org.glassfish.hk2.utilities.binding.AbstractBinder;
 import org.glassfish.jersey.server.internal.inject.ConfiguredValidator;
 
@@ -26,7 +25,7 @@ public class HibernateValidationFeature implements Feature {
                 bindFactory(DefaultConfigurationProvider.class, Singleton.class).to(Configuration.class).in(Singleton.class);
                 bindFactory(DefaultValidatorFactoryProvider.class, Singleton.class).to(ValidatorFactory.class).in(Singleton.class);
                 bindFactory(DefaultValidatorProvider.class, Singleton.class).to(Validator.class).in(Singleton.class);
-                bindFactory(ConfiguredValidatorProvider.class, Singleton.class).to(ConfiguredValidator.class).in(PerLookup.class);
+                bindFactory(ConfiguredValidatorProvider.class, Singleton.class).to(ConfiguredValidator.class).in(Singleton.class);
             }
         });
 
@@ -86,15 +85,9 @@ public class HibernateValidationFeature implements Feature {
         @Inject
         private ValidatorFactory factory;
 
-        private ConfiguredValidator configuredValidator;
-
         @Override
         public ConfiguredValidator provide() {
-            if (configuredValidator == null) {
-                configuredValidator = new DropwizardConfiguredValidator(factory.getValidator());
-            }
-
-            return configuredValidator;
+            return new DropwizardConfiguredValidator(factory.getValidator());
         }
 
         @Override

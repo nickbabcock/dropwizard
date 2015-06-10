@@ -41,6 +41,16 @@ public class ConstraintViolationExceptionMapperTest extends JerseyTest {
     }
 
     @Test
+    public void postInvalidatedEntityIs422() throws Exception {
+        assumeThat(Locale.getDefault().getLanguage(), is("en"));
+
+        final Response response = target("/valid/fooValidated").request(MediaType.APPLICATION_JSON)
+                .post(Entity.entity("{}", MediaType.APPLICATION_JSON));
+        assertThat(response.getStatus()).isEqualTo(422);
+        assertThat(response.readEntity(String.class)).isEqualTo("{\"errors\":[\"name may not be empty\"]}");
+    }
+
+    @Test
     public void returnInvalidEntityIs500() throws Exception {
         assumeThat(Locale.getDefault().getLanguage(), is("en"));
 
@@ -110,8 +120,9 @@ public class ConstraintViolationExceptionMapperTest extends JerseyTest {
                 .request().get();
         assertThat(response.getStatus()).isEqualTo(400);
 
-        String ret = "{\"errors\":[\"query param name may not be empty\"]}";
-        assertThat(response.readEntity(String.class)).isEqualTo(ret);
+        assertThat(response.readEntity(String.class))
+                .containsOnlyOnce("\"name must be Coda\"")
+                .containsOnlyOnce("\"query param name may not be empty\"");
     }
 
     @Test

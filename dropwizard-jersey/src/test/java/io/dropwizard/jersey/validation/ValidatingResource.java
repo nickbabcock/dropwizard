@@ -22,7 +22,7 @@ public class ValidatingResource {
     @POST
     @Path("foo")
     @Valid
-    public ValidRepresentation blah(@Validated ValidRepresentation representation) {
+    public ValidRepresentation blah(@Valid ValidRepresentation representation, @QueryParam("somethingelse") String xer) {
         return new ValidRepresentation();
     }
 
@@ -103,7 +103,8 @@ public class ValidatingResource {
 
     @GET
     @Path("context")
-    public String contextual(@Valid @Context @NotNull ServletContext con) {
+    public String contextual(@
+                                         Valid @Context @NotNull ServletContext con) {
         return "A";
     }
 

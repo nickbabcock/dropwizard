@@ -67,7 +67,6 @@ public class DropwizardResourceConfig extends ResourceConfig {
         register(NonEmptyStringParamFeature.class);
         register(new SessionFactoryProvider.Binder());
         register(HibernateValidationFeature.class);
-        register(ValidationFeature.class);
     }
 
     public static DropwizardResourceConfig forTesting(MetricRegistry metricRegistry) {

@@ -89,32 +89,32 @@ public class JacksonMessageBodyProvider extends JacksonJaxbJsonProvider {
 
         final Class<?>[] classes = findValidationGroups(annotations);
 
-        if (classes != null) {
-            Set<ConstraintViolation<Object>> violations = null;
-
-            if (value instanceof Map) {
-                violations = validate(((Map) value).values(), classes);
-            } else if (value instanceof Iterable) {
-                violations = validate((Iterable) value, classes);
-            } else if (value.getClass().isArray()) {
-                violations = new HashSet<>();
-
-                Object[] values = (Object[]) value;
-                for (Object item : values) {
-                    violations.addAll(validator.validate(item, classes));
-                }
-            } else {
-                violations = validator.validate(value, classes);
-            }
-
-            if (violations != null && !violations.isEmpty()) {
-                Set<ConstraintViolation<?>> constraintViolations = ConstraintViolations.copyOf(violations);
-                LOGGER.trace("Validation failed: {}; original data was {}",
-                        ConstraintViolations.formatUntyped(constraintViolations), value);
-                throw new ConstraintViolationException("The request entity had the following errors:",
-                        constraintViolations);
-            }
-        }
+//        if (classes != null) {
+//            Set<ConstraintViolation<Object>> violations = null;
+//
+//            if (value instanceof Map) {
+//                violations = validate(((Map) value).values(), classes);
+//            } else if (value instanceof Iterable) {
+//                violations = validate((Iterable) value, classes);
+//            } else if (value.getClass().isArray()) {
+//                violations = new HashSet<>();
+//
+//                Object[] values = (Object[]) value;
+//                for (Object item : values) {
+//                    violations.addAll(validator.validate(item, classes));
+//                }
+//            } else {
+//                violations = validator.validate(value, classes);
+//            }
+//
+//            if (violations != null && !violations.isEmpty()) {
+//                Set<ConstraintViolation<?>> constraintViolations = ConstraintViolations.copyOf(violations);
+//                LOGGER.trace("Validation failed: {}; original data was {}",
+//                        ConstraintViolations.formatUntyped(constraintViolations), value);
+//                throw new ConstraintViolationException("The request entity had the following errors:",
+//                        constraintViolations);
+//            }
+//        }
 
         return value;
     }

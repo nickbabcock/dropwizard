@@ -1,12 +1,10 @@
 package io.dropwizard.validation;
 
 import com.google.common.base.Joiner;
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.Ordering;
-import com.google.common.collect.Sets;
+import com.google.common.collect.*;
 
 import javax.validation.ConstraintViolation;
+import javax.validation.ElementKind;
 import javax.validation.Path;
 import java.util.Set;
 
@@ -25,7 +23,17 @@ public class ConstraintViolations {
 
     public static <T> String validationMethodFormatted(ConstraintViolation<T> v) {
         final ImmutableList<Path.Node> nodes = ImmutableList.copyOf(v.getPropertyPath());
-        String usefulNodes = DOT_JOINER.join(nodes.subList(0, nodes.size() - 1));
+
+        // It is possible that a BeanParam may contain a ValidationMethod, and in which case, it has the not
+        // client friendly name of <function>.<arg index>.<validation method message>. This will trim it off.
+        int paramIndex = -1;
+        for (int i = 0; i < nodes.size(); i++) {
+            if (nodes.get(i).getKind() == ElementKind.PARAMETER) {
+                paramIndex = i;
+            }
+        }
+
+        String usefulNodes = DOT_JOINER.join(nodes.subList(paramIndex + 1, nodes.size() - 1));
         String msg = usefulNodes + (v.getMessage().startsWith(".") ? "" : " ") + v.getMessage();
         return msg.trim();
     }

@@ -3,10 +3,13 @@ package io.dropwizard.jersey.validation;
 import com.google.common.base.Predicate;
 import com.google.common.collect.FluentIterable;
 import com.google.common.collect.ImmutableSet;
+import io.dropwizard.validation.ConstraintViolations;
 import io.dropwizard.validation.Validated;
 import org.glassfish.jersey.server.internal.inject.ConfiguredValidator;
 import org.glassfish.jersey.server.model.Invocable;
 import org.glassfish.jersey.server.model.Parameter;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.validation.*;
 import javax.validation.executable.ExecutableValidator;
@@ -14,12 +17,17 @@ import javax.validation.groups.Default;
 import javax.validation.metadata.BeanDescriptor;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
 public class DropwizardConfiguredValidator implements ConfiguredValidator {
+    private static final Logger LOGGER = LoggerFactory.getLogger(DropwizardConfiguredValidator.class);
+
+    /**
+     * The default group array used in case any of the validate methods is called without a group.
+     */
+    private static final Class<?>[] DEFAULT_GROUP_ARRAY = new Class<?>[]{Default.class};
 
     private final Validator validator;
 
@@ -43,7 +51,8 @@ public class DropwizardConfiguredValidator implements ConfiguredValidator {
 
         final int entityIndex2 = entityIndex;
 
-        // Remove all the constraints that occurred on the request entity thus narrowing down to violations on params like QueryParam and HeaderParam
+        // Remove all the constraints that occurred on the request entity thus narrowing down to
+        // violations on params like QueryParam and HeaderParam
         final ImmutableSet<ConstraintViolation<Object>> paramViolations =
                 FluentIterable.from(constraintViolations).filter(new Predicate<ConstraintViolation<Object>>() {
                     @Override
@@ -54,7 +63,8 @@ public class DropwizardConfiguredValidator implements ConfiguredValidator {
                             }
                         }
 
-                        // Should never get to this point as all the constraint violations should be parameters.
+                        // Should never get to this point as all the constraint violations should be
+                        // parameters.
                         return false;
                     }
                 }).toSet();
@@ -65,31 +75,59 @@ public class DropwizardConfiguredValidator implements ConfiguredValidator {
 
         // Finally, manually validate the request entity
         if (entityIndex > -1) {
-            final Class<?>[] classes = findValidationGroups(params.get(entityIndex).getDeclaredAnnotations());
-            final Set<ConstraintViolation<Object>> validate = validate(objects[entityIndex], classes);
-            if (!validate.isEmpty()) {
-                throw new ConstraintViolationException(validate);
-            }
+            validate(objects[entityIndex], params.get(entityIndex).getDeclaredAnnotations(), false);
         }
     }
 
-    private static final Class<?>[] DEFAULT_GROUP_ARRAY = new Class<?>[]{Default.class};
-
     @Override
-    public void validateResult(Object o, Invocable invocable, Object o1) throws ConstraintViolationException {
+    public void validateResult(Object resource, Invocable invocable, Object value) throws ConstraintViolationException {
         final Method method = invocable.getHandlingMethod();
 
-        final Set<ConstraintViolation<Object>> violations1 = forExecutables().validateReturnValue(o, method, o1);
-        if (!violations1.isEmpty()) {
-            throw new ConstraintViolationException(violations1);
+        if (value != null) {
+            final Set<ConstraintViolation<Object>> violations = forExecutables().validateReturnValue(resource, method, value);
+            if (!violations.isEmpty()) {
+                throw new ConstraintViolationException(violations);
+            }
         }
 
         // If the class is annotated with @Validated, we must validate it manually.
-        final Class<?>[] classes = findValidationGroups(method.getDeclaredAnnotations());
+        validate(value, method.getDeclaredAnnotations(), true);
+    }
+
+    private void validate(Object value, Annotation[] annotations, boolean isResponse) {
+        final Class<?>[] classes = findValidationGroups(annotations);
+        String a = isResponse ? "server response" : "request" ;
+
+        if (classes != null && value == null) {
+            String msg = String.format("The %s entity was empty", a);
+            throw new ConstraintViolationException(msg,
+                    Collections.<ConstraintViolation<Object>>emptySet());
+        }
+
         if (classes != null) {
-            final Set<ConstraintViolation<Object>> violations = validate(o1, classes);
+            Set<ConstraintViolation<Object>> violations = null;
+
+            if (value instanceof Map) {
+                violations = validate(((Map) value).values(), classes);
+            } else if (value instanceof Iterable) {
+                violations = validate((Iterable) value, classes);
+            } else if (value.getClass().isArray()) {
+                violations = new HashSet<>();
+
+                Object[] values = (Object[]) value;
+                for (Object item : values) {
+                    violations.addAll(validator.validate(item, classes));
+                }
+            } else {
+                violations = validator.validate(value, classes);
+            }
+
             if (!violations.isEmpty()) {
-                throw new ConstraintViolationException("Server response", violations);
+                Set<ConstraintViolation<?>> constraintViolations = ConstraintViolations.copyOf(violations);
+                LOGGER.trace("Validation failed: {}; original data was {}",
+                        ConstraintViolations.formatUntyped(constraintViolations), value);
+                throw new ConstraintViolationException(a,
+                        constraintViolations);
             }
         }
     }
@@ -105,6 +143,14 @@ public class DropwizardConfiguredValidator implements ConfiguredValidator {
         return null;
     }
 
+    private Set<ConstraintViolation<Object>> validate(Iterable values, Class<?>[] classes) {
+        Set<ConstraintViolation<Object>> violations = new HashSet<>();
+        for (Object value : values) {
+            violations.addAll(validator.validate(value, classes));
+        }
+
+        return violations;
+    }
 
     @Override
     public <T> Set<ConstraintViolation<T>> validate(T t, Class<?>... classes) {

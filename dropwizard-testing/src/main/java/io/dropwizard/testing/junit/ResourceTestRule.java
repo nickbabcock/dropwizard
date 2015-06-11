@@ -159,7 +159,7 @@ public class ResourceTestRule implements TestRule {
             for (Map.Entry<String, Object> property : resourceTestRule.properties.entrySet()) {
                 property(property.getKey(), property.getValue());
             }
-            register(new JacksonMessageBodyProvider(resourceTestRule.mapper, resourceTestRule.validator));
+            register(new JacksonMessageBodyProvider(resourceTestRule.mapper));
             for (Object singleton : resourceTestRule.singletons) {
                 register(singleton);
             }

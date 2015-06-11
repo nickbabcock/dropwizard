@@ -11,8 +11,6 @@ import org.glassfish.jersey.test.JerseyTest;
 import org.glassfish.jersey.test.TestProperties;
 import org.junit.Test;
 
-import javax.validation.Validation;
-import javax.validation.Validator;
 import javax.ws.rs.client.Entity;
 import javax.ws.rs.core.Application;
 import javax.ws.rs.core.MediaType;
@@ -34,9 +32,8 @@ public class JsonProcessingExceptionMapperTest extends JerseyTest {
 
     @Override
     protected void configureClient(ClientConfig config) {
-        final Validator validator = Validation.buildDefaultValidatorFactory().getValidator();
         final ObjectMapper mapper = new ObjectMapper();
-        final JacksonMessageBodyProvider provider = new JacksonMessageBodyProvider(mapper, validator);
+        final JacksonMessageBodyProvider provider = new JacksonMessageBodyProvider(mapper);
         config.register(provider);
     }
 

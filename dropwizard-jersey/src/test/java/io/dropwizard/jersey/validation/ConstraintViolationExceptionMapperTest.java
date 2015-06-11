@@ -2,17 +2,21 @@ package io.dropwizard.jersey.validation;
 
 import com.codahale.metrics.MetricRegistry;
 import io.dropwizard.jersey.DropwizardResourceConfig;
+import io.dropwizard.jersey.jackson.JacksonMessageBodyProviderTest;
+import io.dropwizard.jersey.jackson.JacksonMessageBodyProviderTest.Example;
+import io.dropwizard.jersey.jackson.JacksonMessageBodyProviderTest.ListExample;
+import io.dropwizard.jersey.jackson.JacksonMessageBodyProviderTest.PartialExample;
 import io.dropwizard.logging.BootstrapLogging;
 import org.glassfish.jersey.test.JerseyTest;
 import org.glassfish.jersey.test.TestProperties;
 import org.junit.Test;
 
 import javax.ws.rs.client.Entity;
-import javax.ws.rs.core.Application;
-import javax.ws.rs.core.Form;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
+import javax.ws.rs.core.*;
+import java.util.Collection;
+import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.CoreMatchers.is;
@@ -227,5 +231,184 @@ public class ConstraintViolationExceptionMapperTest extends JerseyTest {
                 .request().get();
         String ret2 = "{\"errors\":[\"query param cheese may not be null\"]}";
         assertThat(response2.readEntity(String.class)).isEqualTo(ret2);
+    }
+
+    @Test
+    public void returnPartialValidatedRequestEntities() {
+        final Response response = target("/valid/validatedPartialExample")
+                .request().post(Entity.json("{\"id\":1}"));
+
+        assertThat(response.getStatus()).isEqualTo(200);
+        assertThat(response.readEntity(PartialExample.class).id)
+                .isEqualTo(1);
+    }
+
+    @Test
+    public void invalidEntityExceptionForPartialValidatedRequestEntities() {
+        final Response response = target("/valid/validatedPartialExampleBoth")
+                .request().post(Entity.json("{\"id\":1}"));
+
+        assertThat(response.getStatus()).isEqualTo(422);
+        assertThat(response.readEntity(String.class))
+                .isEqualTo("{\"errors\":[\"text may not be null\"]}");
+    }
+
+    @Test
+    public void returnPartialBothValidatedRequestEntities() {
+        final Response response = target("/valid/validatedPartialExampleBoth")
+                .request().post(Entity.json("{\"id\":1,\"text\":\"hello Cemo\"}"));
+
+        assertThat(response.getStatus()).isEqualTo(200);
+
+        PartialExample ex = response.readEntity(PartialExample.class);
+        assertThat(ex.id).isEqualTo(1);
+        assertThat(ex.text).isEqualTo("hello Cemo");
+    }
+
+    @Test
+    public void invalidEntityExceptionForInvalidRequestEntities() {
+        final Response response = target("/valid/validExample")
+                .request().post(Entity.json("{\"id\":-1}"));
+
+        assertThat(response.getStatus()).isEqualTo(422);
+        assertThat(response.readEntity(String.class))
+                .isEqualTo("{\"errors\":[\"id must be greater than or equal to 0\"]}");
+    }
+
+    @Test
+    public void returnRequestEntities() {
+        final Response response = target("/valid/validExample")
+                .request().post(Entity.json("{\"id\":1}"));
+
+        assertThat(response.getStatus()).isEqualTo(200);
+        assertThat(response.readEntity(Example.class).id)
+                .isEqualTo(1);
+    }
+
+    @Test
+    public void returnRequestArrayEntities() {
+        final Response response = target("/valid/validExampleArray")
+                .request().post(Entity.json("[{\"id\":1}, {\"id\":2}]"));
+
+        final Example ex1 = new Example();
+        final Example ex2 = new Example();
+        ex1.id = 1;
+        ex2.id = 2;
+
+        assertThat(response.getStatus()).isEqualTo(200);
+        assertThat(response.readEntity(Example[].class))
+                .containsExactly(ex1, ex2);
+    }
+
+    @Test
+    public void invalidRequestCollectionEntities() {
+        final Response response = target("/valid/validExampleCollection")
+                .request().post(Entity.json("[{\"id\":-1}, {\"id\":-2}]"));
+
+        assertThat(response.getStatus()).isEqualTo(422);
+        assertThat(response.readEntity(String.class))
+                .contains("id must be greater than or equal to 0",
+                        "id must be greater than or equal to 0");
+    }
+
+    @Test
+    public void invalidRequestSingleCollectionEntities() {
+        final Response response = target("/valid/validExampleCollection")
+                .request().post(Entity.json("[{\"id\":1}, {\"id\":-2}]"));
+
+        assertThat(response.getStatus()).isEqualTo(422);
+        assertThat(response.readEntity(String.class))
+                .containsOnlyOnce("id must be greater than or equal to 0");
+    }
+
+    @Test
+    public void returnRequestCollectionEntities() {
+        final Response response = target("/valid/validExampleCollection")
+                .request().post(Entity.json("[{\"id\":1}, {\"id\":2}]"));
+
+        assertThat(response.getStatus()).isEqualTo(200);
+        final Collection<Example> example =
+                response.readEntity(new GenericType<Collection<Example>>() {});
+
+        Example ex1 = new Example();
+        Example ex2 = new Example();
+        ex1.id = 1;
+        ex2.id = 2;
+
+        assertThat(example).containsOnly(ex1, ex2);
+    }
+
+    @Test
+         public void invalidRequestSetEntities() {
+        final Response response = target("/valid/validExampleSet")
+                .request().post(Entity.json("[{\"id\":1}, {\"id\":-2}]"));
+        assertThat(response.getStatus()).isEqualTo(422);
+        assertThat(response.readEntity(String.class))
+                .containsOnlyOnce("id must be greater than or equal to 0");
+    }
+
+    @Test
+    public void invalidRequestListEntities() {
+        final Response response = target("/valid/validExampleList")
+                .request().post(Entity.json("[{\"id\":-1}, {\"id\":-2}]"));
+        assertThat(response.getStatus()).isEqualTo(422);
+        assertThat(response.readEntity(String.class))
+                .isEqualTo("{\"errors\":[\"id must be greater than or equal to 0\"," +
+                        "\"id must be greater than or equal to 0\"]}");
+    }
+
+    @Test
+    public void throwsAConstraintViolationExceptionForEmptyRequestEntities() {
+        final Response response = target("/valid/validExample")
+                .request().post(Entity.json(null));
+
+        assertThat(response.getStatus()).isEqualTo(422);
+        assertThat(response.readEntity(String.class))
+            .isEqualTo("{\"errors\":[\"The request entity was empty\"]}");
+    }
+
+    @Test
+    public void returnsValidatedMapRequestEntities() {
+        final Response response = target("/valid/validExampleMap")
+                .request().post(Entity.json("{\"one\": {\"id\":1}, \"two\": {\"id\":2}}"));
+
+        assertThat(response.getStatus()).isEqualTo(200);
+
+        Map<String, Example> map = response.readEntity(new GenericType<Map<String, Example>>(){});
+        assertThat(map.get("one").id).isEqualTo(1);
+        assertThat(map.get("two").id).isEqualTo(2);
+    }
+
+    @Test
+    public void invalidMapRequestEntities() {
+        final Response response = target("/valid/validExampleMap")
+                .request().post(Entity.json("{\"one\": {\"id\":-1}, \"two\": {\"id\":-2}}"));
+
+        assertThat(response.getStatus()).isEqualTo(422);
+        assertThat(response.readEntity(String.class))
+                .isEqualTo("{\"errors\":[\"id must be greater than or equal to 0\"," +
+                        "\"id must be greater than or equal to 0\"]}");
+    }
+
+    @Test
+    public void returnsValidatedEmbeddedListEntities() {
+        final Response response = target("/valid/validExampleEmbeddedList")
+                .request().post(Entity.json("[ {\"examples\": [ {\"id\":1 } ] } ]"));
+
+        assertThat(response.getStatus()).isEqualTo(200);
+        List<ListExample> res = response.readEntity(new GenericType<List<ListExample>>() {});
+        assertThat(res).hasSize(1);
+        assertThat(res.get(0).examples).hasSize(1);
+        assertThat(res.get(0).examples.get(0).id).isEqualTo(1);
+    }
+
+    @Test
+    public void invalidEmbeddedListEntities() {
+        final Response response = target("/valid/validExampleEmbeddedList")
+                .request().post(Entity.json("[ {\"examples\": [ {\"id\":1 } ] }, { } ]"));
+
+        assertThat(response.getStatus()).isEqualTo(422);
+        assertThat(response.readEntity(String.class))
+                .containsOnlyOnce("examples may not be empty");
     }
 }

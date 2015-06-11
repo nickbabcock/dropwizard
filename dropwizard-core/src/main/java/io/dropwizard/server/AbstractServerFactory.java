@@ -481,7 +481,7 @@ public abstract class AbstractServerFactory implements ServerFactory {
                 urlPattern += "*";
             }
             jersey.setUrlPattern(urlPattern);
-            jersey.register(new JacksonMessageBodyProvider(objectMapper, validator));
+            jersey.register(new JacksonMessageBodyProvider(objectMapper));
             if (registerDefaultExceptionMappers == null || registerDefaultExceptionMappers) {
                 jersey.register(new LoggingExceptionMapper<Throwable>() {
                 });

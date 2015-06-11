@@ -9,7 +9,7 @@ import javax.ws.rs.ext.Provider;
 @Provider
 public class DefaultJacksonMessageBodyProvider extends JacksonMessageBodyProvider {
     public DefaultJacksonMessageBodyProvider() {
-        super(Jackson.newObjectMapper(), Validators.newValidator());
+        super(Jackson.newObjectMapper());
     }
 }
 

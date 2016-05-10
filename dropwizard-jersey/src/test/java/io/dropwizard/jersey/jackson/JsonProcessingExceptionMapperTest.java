@@ -7,6 +7,7 @@ import com.google.common.collect.ImmutableList;
 import io.dropwizard.jersey.DropwizardResourceConfig;
 import io.dropwizard.logging.BootstrapLogging;
 import org.glassfish.jersey.client.ClientConfig;
+import org.glassfish.jersey.server.ServerProperties;
 import org.glassfish.jersey.test.JerseyTest;
 import org.glassfish.jersey.test.TestProperties;
 import org.junit.Test;
@@ -28,6 +29,7 @@ public class JsonProcessingExceptionMapperTest extends JerseyTest {
     protected Application configure() {
         forceSet(TestProperties.CONTAINER_PORT, "0");
         return DropwizardResourceConfig.forTesting(new MetricRegistry())
+                .property(ServerProperties.RESPONSE_SET_STATUS_OVER_SEND_ERROR, "true")
                 .packages("io.dropwizard.jersey.jackson");
     }
 
@@ -63,15 +65,60 @@ public class JsonProcessingExceptionMapperTest extends JerseyTest {
     }
 
     @Test
-    public void returnsA400ForNonDeserializableRequestEntities() throws Exception {
-        Response response = target("/json/ok").request(MediaType.APPLICATION_JSON)
-                .post(Entity.entity(new UnknownRepresentation(100), MediaType.APPLICATION_JSON));
+    public void returnsA500ForAbstractEntities() throws Exception {
+        Response response = target("/json/interface").request(MediaType.APPLICATION_JSON)
+            .post(Entity.entity("\"hello\"", MediaType.APPLICATION_JSON));
+        assertThat(response.getStatus()).isEqualTo(500);
+    }
+
+    @Test
+    public void returnsA500ForListAbstractEntities() throws Exception {
+        Response response = target("/json/interfaceList").request(MediaType.APPLICATION_JSON)
+            .post(Entity.entity("[\"hello\"]", MediaType.APPLICATION_JSON));
+        assertThat(response.getStatus()).isEqualTo(500);
+    }
+
+    @Test
+    public void returnsA400ForNonDeserializableRequestEntities1() throws Exception {
+        Response response = target("/json/url").request(MediaType.APPLICATION_JSON)
+            .post(Entity.entity("\"no-scheme.com\"", MediaType.APPLICATION_JSON));
         assertThat(response.getStatus()).isEqualTo(400);
 
         JsonNode errorMessage = response.readEntity(JsonNode.class);
         assertThat(errorMessage.get("code").asInt()).isEqualTo(400);
         assertThat(errorMessage.get("message").asText()).isEqualTo("Unable to process JSON");
         assertThat(errorMessage.has("details")).isFalse();
+    }
+
+    @Test
+    public void returnsA400ForNonDeserializableRequestEntities2() throws Exception {
+        Response response = target("/json/urlList").request(MediaType.APPLICATION_JSON)
+            .post(Entity.entity("[\"no-scheme.com\"]", MediaType.APPLICATION_JSON));
+        assertThat(response.getStatus()).isEqualTo(400);
+
+        JsonNode errorMessage = response.readEntity(JsonNode.class);
+        assertThat(errorMessage.get("code").asInt()).isEqualTo(400);
+        assertThat(errorMessage.get("message").asText()).isEqualTo("Unable to process JSON");
+        assertThat(errorMessage.has("details")).isFalse();
+    }
+
+    @Test
+    public void returnsA400ForNonDeserializableRequestEntities() throws Exception {
+        Response response = target("/json/ok").request(MediaType.APPLICATION_JSON)
+            .post(Entity.entity(new UnknownRepresentation(100), MediaType.APPLICATION_JSON));
+        assertThat(response.getStatus()).isEqualTo(400);
+
+        JsonNode errorMessage = response.readEntity(JsonNode.class);
+        assertThat(errorMessage.get("code").asInt()).isEqualTo(400);
+        assertThat(errorMessage.get("message").asText()).isEqualTo("Unable to process JSON");
+        assertThat(errorMessage.has("details")).isFalse();
+    }
+
+    @Test
+    public void returnsA500ForNonDeserializableRequestEntities5() throws Exception {
+        Response response = target("/json/ok").request(MediaType.APPLICATION_JSON)
+            .post(Entity.entity("false", MediaType.APPLICATION_JSON));
+        assertThat(response.getStatus()).isEqualTo(500);
     }
 
     @Test

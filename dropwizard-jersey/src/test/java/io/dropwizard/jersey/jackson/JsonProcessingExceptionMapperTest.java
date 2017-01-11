@@ -7,6 +7,9 @@ import com.google.common.collect.ImmutableList;
 import io.dropwizard.jersey.DropwizardResourceConfig;
 import io.dropwizard.logging.BootstrapLogging;
 import org.glassfish.jersey.client.ClientConfig;
+import org.glassfish.jersey.client.ClientProperties;
+import org.glassfish.jersey.client.JerseyClient;
+import org.glassfish.jersey.client.JerseyClientBuilder;
 import org.glassfish.jersey.test.JerseyTest;
 import org.glassfish.jersey.test.TestProperties;
 import org.junit.Test;
@@ -26,6 +29,10 @@ public class JsonProcessingExceptionMapperTest extends JerseyTest {
     @Override
     protected Application configure() {
         forceSet(TestProperties.CONTAINER_PORT, "0");
+        final JerseyClient client = JerseyClientBuilder.createClient();
+        client.property(ClientProperties.CONNECT_TIMEOUT, 1000);
+        client.property(ClientProperties.READ_TIMEOUT,    5000);
+        setClient(client);
         return DropwizardResourceConfig.forTesting(new MetricRegistry())
                 .packages("io.dropwizard.jersey.jackson");
     }

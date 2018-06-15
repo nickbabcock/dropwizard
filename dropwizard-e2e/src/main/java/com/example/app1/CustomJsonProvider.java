@@ -3,6 +3,8 @@ package com.example.app1;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.jaxrs.json.JacksonJaxbJsonProvider;
 
+import javax.ws.rs.Consumes;
+import javax.ws.rs.Produces;
 import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.MultivaluedMap;
@@ -14,7 +16,11 @@ import java.lang.reflect.Type;
 import java.nio.charset.StandardCharsets;
 import java.util.Objects;
 
-/** Custom JSON reader and writer that will write a leading HEADER to the JSON output */
+/**
+ * Custom JSON reader and writer that will write a leading HEADER to the JSON output
+ */
+@Produces(MediaType.APPLICATION_JSON)
+@Consumes(MediaType.APPLICATION_JSON)
 public class CustomJsonProvider extends JacksonJaxbJsonProvider {
     private static final String HEADER = "/** A Dropwizard specialty */\n";
     private static final byte[] HEADER_BYTES = HEADER.getBytes(StandardCharsets.UTF_8);
